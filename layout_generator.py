@@ -27,9 +27,9 @@ class PlayerLayoutRenderer:
         "892.298522 277.528256 914.17946 324.34283L914.17946 324.34283Z"
     )
 
-    def render(self, players: Iterable[str]) -> str:
+    def render(self, players: Iterable[str], empty_text: str = "暂无玩家") -> str:
         player_list = [player.strip() for player in players if player and player.strip()]
-        body = self._render_empty_row() if not player_list else self._render_player_rows(player_list)
+        body = self._render_empty_row(empty_text) if not player_list else self._render_player_rows(player_list)
         return "\n".join(
             [
                 '<local:MyCard Margin="0,0,0,0" CanSwap="False" IsSwapped="True">',
@@ -61,13 +61,13 @@ class PlayerLayoutRenderer:
             ]
         )
 
-    def write(self, players: Iterable[str], path: str | Path = "Custom.xaml") -> str:
-        xaml = self.render(players)
+    def write(self, players: Iterable[str], path: str | Path = "Custom.xaml", empty_text: str = "暂无玩家") -> str:
+        xaml = self.render(players, empty_text=empty_text)
         Path(path).write_text(xaml, encoding="utf-8")
         return xaml
 
-    def _render_empty_row(self) -> str:
-        cards = [self._render_empty_card(column, margin) for column, margin in self._column_margins(1)]
+    def _render_empty_row(self, text: str) -> str:
+        cards = [self._render_empty_card(column, margin, text) for column, margin in self._column_margins(1)]
         return self._wrap_row(cards)
 
     def _render_player_rows(self, players: list[str]) -> str:
@@ -85,12 +85,12 @@ class PlayerLayoutRenderer:
         indented_cards = "\n".join(self._indent_lines(card, 3) for card in cards)
         return "\n".join(
             [
-                "        <Grid Margin=\"0,0,0,12\">",
-                "            <Grid.ColumnDefinitions>",
-                "                <ColumnDefinition Width=\"*\" />",
-                "                <ColumnDefinition Width=\"*\" />",
-                "                <ColumnDefinition Width=\"*\" />",
-                "            </Grid.ColumnDefinitions>",
+                '        <Grid Margin="0,0,0,12">',
+                '            <Grid.ColumnDefinitions>',
+                '                <ColumnDefinition Width="*" />',
+                '                <ColumnDefinition Width="*" />',
+                '                <ColumnDefinition Width="*" />',
+                '            </Grid.ColumnDefinitions>',
                 indented_cards,
                 "        </Grid>",
             ]
@@ -112,13 +112,13 @@ class PlayerLayoutRenderer:
                 '                   FontWeight="Bold"',
                 '                   Foreground="#2F3E4E"',
                 f'                   Text="{safe_name}" />',
-
                 "    </StackPanel>",
                 "</Border>",
             ]
         )
 
-    def _render_empty_card(self, column: int, margin: str) -> str:
+    def _render_empty_card(self, column: int, margin: str, text: str) -> str:
+        safe_text = escape(text)
         return "\n".join(
             [
                 f'<Border Grid.Column="{column}"',
@@ -132,7 +132,7 @@ class PlayerLayoutRenderer:
                 '        <TextBlock FontSize="14"',
                 '                   FontWeight="Bold"',
                 '                   Foreground="#6B7A8C"',
-                '                   Text="暂无玩家" />',
+                f'                   Text="{safe_text}" />',
                 "    </StackPanel>",
                 "</Border>",
             ]

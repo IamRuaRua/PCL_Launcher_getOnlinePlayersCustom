@@ -8,6 +8,7 @@ from mcstatus import JavaServer
 from layout_generator import PlayerLayoutRenderer
 
 DEFAULT_OUTPUT_PATH = Path("Custom.xaml")
+QUERY_FAILED_TEXT = "服务器信息获取失败"
 
 
 def fetch_players(server_address: str) -> list[str]:
@@ -20,6 +21,11 @@ def fetch_players(server_address: str) -> list[str]:
 def render_xaml(server_address: str) -> str:
     renderer = PlayerLayoutRenderer()
     return renderer.render(fetch_players(server_address))
+
+
+def render_query_failed_xaml() -> str:
+    renderer = PlayerLayoutRenderer()
+    return renderer.render([], empty_text=QUERY_FAILED_TEXT)
 
 
 def update_xaml_file(server_address: str, output_path: str | Path = DEFAULT_OUTPUT_PATH) -> Path:
@@ -46,8 +52,8 @@ def create_app() -> Flask:
             return Response(xaml, mimetype="application/xml")
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
-        except Exception as exc:
-            return jsonify({"error": f"query failed: {exc}"}), 502
+        except Exception:
+            return Response(render_query_failed_xaml(), mimetype="application/xml")
 
     @app.get("/Custom.xaml")
     def xaml_file() -> Response:
@@ -59,8 +65,8 @@ def create_app() -> Flask:
             return Response(output_path.read_text(encoding="utf-8"), mimetype="application/xml")
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
-        except Exception as exc:
-            return jsonify({"error": f"query failed: {exc}"}), 502
+        except Exception:
+            return Response(render_query_failed_xaml(), mimetype="application/xml")
 
     return app
 
@@ -69,4 +75,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5678)
